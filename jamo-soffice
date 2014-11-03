@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# If running in developer mode we will start the SSH server
+if [ ! -f /data/postgresql/postgresql.conf ]
+  then
+    mkdir -p /data/postgresql && chown -R postgres:postgres /data/postgresql
+    su -c '/usr/lib/postgresql/9.3/bin/initdb -D /data/postgresql' postgres
+    echo "host all  all    0.0.0.0/0  md5" >> /data/postgresql/pg_hba.conf
+    echo "listen_addresses='*'" >> /data/postgresql/postgresql.conf
+    su -c '/usr/lib/postgresql/9.3/bin/postgres -D /data/postgresql -c config_file=/data/postgresql/postgresql.conf' postgres &
+	sleep 5
+	cd /tmp
+    su -c 'psql --command "CREATE USER openerp WITH SUPERUSER PASSWORD '\''0p3n3rp'\'';"' postgres
+    su -c 'createdb -O openerp -T template0 -E utf8 openerp' postgres
+	kill -9 $(ps -ef | grep '/bin/postgres -D /data/postgresql' | awk '{print $2}')
+fi
+su -c '/usr/lib/postgresql/9.3/bin/postgres -D /data/postgresql -c config_file=/data/postgresql/postgresql.conf' postgres
